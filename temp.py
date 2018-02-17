@@ -1,6 +1,6 @@
-from sdncore.vty.drivers.telnet import TelnetDriver
+from sdncore.sdncore.vty.drivers.ssh import SSHDriver
 
-td = TelnetDriver('ictshore.com', port=80)
+td = SSHDriver('10.0.0.1', 'admin', 'cisco')
 td.open()
-td.send_text('GET /\n')
-print(td.read_eof())
+td.send_text('show run')
+print(td.read_until('username'))
