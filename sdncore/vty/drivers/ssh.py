@@ -225,10 +225,12 @@ class SSHDriver(Driver):
             )
             t1.start()
             # While timeout has not expired and there is data to read
-            while not signal_timeout.is_set():
-                data += self._get_ready_text()
-                time.sleep(self.READ_DELAY)
-
+            try:
+                while not signal_timeout.is_set():
+                    data += self._get_ready_text()
+                    time.sleep(self.READ_DELAY)
+            except EOFError:
+                pass
             return data
 
         def read_until(self, text, timeout=2):
