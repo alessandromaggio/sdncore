@@ -1,5 +1,14 @@
 """Defines the skeleton for a driver to connect to a device in VTY"""
+import time
 
+
+def set_timeout(event, duration):
+    """Triggers an event after the given duration
+
+    :param threading.Event event: The event to be set
+    :param int duration: seconds after which to trigger the event"""
+    time.sleep(duration)
+    event.set()
 
 class Driver:
     """Abstract class all drivers must inherit from"""

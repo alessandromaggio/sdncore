@@ -35,14 +35,14 @@ class TelnetDriver(Driver):
         try:
             self._client.write(text.encode('ascii'))
             return True
-        except socket.error:
-            raise DriverError("Connection closed while sending text")
+        except socket.error as ex:
+            raise DriverError("Connection closed while sending text") from ex
 
     def read_until(self, text, timeout=2):
         try:
             return self._client.read_until(text.encode('ascii'), timeout)
-        except EOFError:
-            raise DriverError("Connection closed without receiving EOF")
+        except EOFError as ex:
+            raise DriverError("Connection closed without receiving EOF") from ex
 
     def read_eof(self, timeout=2):
         return self._client.read_all()
@@ -50,8 +50,8 @@ class TelnetDriver(Driver):
     def expect(self, expr_list, timeout=2):
         try:
             return self._client.expect(expr_list, timeout)
-        except EOFError:
-            raise DriverError("EOF was reached without finding the expected text")
+        except EOFError as ex:
+            raise DriverError("EOF was reached without finding the expected text") from ex
 
     def close(self):
         self._client.close()
