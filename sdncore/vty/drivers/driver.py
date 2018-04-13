@@ -10,6 +10,7 @@ def set_timeout(event, duration):
     time.sleep(duration)
     event.set()
 
+
 class Driver:
     """Abstract class all drivers must inherit from"""
     def __init__(self, target, port, username, password):

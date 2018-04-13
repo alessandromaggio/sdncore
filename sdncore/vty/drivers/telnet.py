@@ -27,28 +27,33 @@ class TelnetDriver(Driver):
         self._client.open(self.target, self.port)
         if self.username != '' or self.password != '':
             self.expect(self.username_finder)
-            self.send_text(self.username)
+            self.send_text(self.username + '\n')
             self.expect(self.password_finder)
-            self.send_text(self.password)
+            self.send_text(self.password + '\n')
 
     def send_text(self, text):
         try:
-            self._client.write(text.encode('ascii'))
+            self._client.write(text.encode('utf8'))
             return True
         except socket.error as ex:
             raise DriverError("Connection closed while sending text") from ex
 
     def read_until(self, text, timeout=2):
         try:
-            return self._client.read_until(text.encode('ascii'), timeout)
+            return self._client.read_until(text.encode('ascii'), timeout).decode('utf8')
         except EOFError as ex:
             raise DriverError("Connection closed without receiving EOF") from ex
 
     def read_eof(self, timeout=2):
-        return self._client.read_all()
+        return self._client.read_all().encode('utf8')
 
     def expect(self, expr_list, timeout=2):
         try:
+            if isinstance(expr_list, str):
+                expr_list = [expr_list]
+            for k, v in enumerate(expr_list):
+                if isinstance(v, str):
+                    expr_list[k] = bytes(v, 'utf8')
             return self._client.expect(expr_list, timeout)
         except EOFError as ex:
             raise DriverError("EOF was reached without finding the expected text") from ex

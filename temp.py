@@ -1,10 +1,9 @@
-from sdncore.sdncore.vty.drivers.ssh import SSHDriver
+from sdncore.vty.session import Session
 
-td = SSHDriver('10.0.0.1', 'admin', 'cisco', shell_mode=True)
-td.open()
-td.send_text('terminal length 0\n')
-td.read_until('#')
-td.send_text('show run\n')
-print(td.read_until('vty', timeout=20))
-td.send_text('show ver\n')
-print(td.read_until('#'))
+
+with Session('10.0.0.1', username='admin', password='cisco', driver=Session.SSH) as session:
+    session.command('terminal length 0')
+    print(session.command('show run'))
+    print('<!--- DIVIDE --->')
+    print(session.command('show ip interface brief'))
+

@@ -203,13 +203,16 @@ class SSHDriver(Driver):
             return str(ret, 'utf8')
 
         def open(self, target, port, username, password, look_for_keys):
-            self.client.connect(
-                target,
-                port=port,
-                username=username,
-                password=password,
-                look_for_keys=look_for_keys
-            )
+            try:
+                self.client.connect(
+                    target,
+                    port=port,
+                    username=username,
+                    password=password,
+                    look_for_keys=look_for_keys
+                )
+            except TimeoutError as ex:
+                raise DriverError('Timeout while connecting to {0}'.format(target)) from ex
             self.shell = self.client.invoke_shell()
             self._launch_reader()
 
