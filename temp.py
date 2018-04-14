@@ -1,6 +1,8 @@
-from sdncore.vty.drivers.telnet import TelnetDriver
+from sdncore.vty.session import Session
 
-td = TelnetDriver('ictshore.com', port=80)
-td.open()
-td.send_text('GET /\n')
-print(td.read_eof())
+
+with Session('10.0.0.1', username='admin', password='cisco', driver=Session.Telnet, stop_character='>') as session:
+    session.command('terminal length 0')
+    print(session.command('show run'))
+    print(session.command('show ip interface brief'))
+
