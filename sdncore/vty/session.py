@@ -1,4 +1,4 @@
-from . import drivers
+from .drivers import telnet, ssh
 
 
 class Session:
@@ -39,11 +39,11 @@ class Session:
         self.buffer = ''
         self.prompt = self.stop_character
         if driver == self.SSH:
-            self.driver = drivers.ssh.SSHDriver
+            self.driver = ssh.SSHDriver
             if self.port is None:
                 self.port = 22
         elif driver == self.Telnet:
-            self.driver = drivers.telnet.TelnetDriver
+            self.driver = telnet.TelnetDriver
             if self.port is None:
                 self.port = 23
         self.hook = self.driver(
@@ -118,8 +118,8 @@ class Session:
         :return: The prompt the device is using
         :rtype: str"""
         lines = self.buffer.split('\n')
-        last_line = ''
-        while len(last_line) == 0 and len(lines) > 0:
-            last_line = lines.pop().replace('\r', '')
-        self.prompt = last_line
+        if len(lines) > 0:
+            last_line = lines.pop()
+            if len(last_line) > 0:
+                self.prompt = last_line
         return self.prompt
