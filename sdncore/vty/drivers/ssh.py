@@ -1,4 +1,5 @@
 from paramiko import client
+from paramiko import RSAKey
 from paramiko.ssh_exception import AuthenticationException
 import threading
 import queue
@@ -19,14 +20,21 @@ class SSHDriver(Driver):
             :param int chunk_size: How many bytes to read in a single cycle of output"""
             raise NotImplementedError()
 
-        def open(self, target, port, username, password, look_for_keys):
+        def open(self, target, port, username, password, look_for_keys, private_key):
             """Opens the connection
 
-            :param str target: Target host
-            :param int port: Target TCP port
-            :param str username: Username to use for authentication
-            :param str password: Password to use for authentication
-            :param bool look_for_keys: Whether to look for keys on the local host
+            :param target: Target host
+            :type target: str
+            :param port: Target TCP port
+            :type port: int
+            :param username: Username to use for authentication
+            :type username: str
+            :param password: Password to use for authentication
+            :type password: str
+            :param look_for_keys: Whether to look for keys on the local host
+            :type look_for_keys: bool
+            :param private_key: Private key to use in the connection
+            :type private_key: paramiko.RSAkey
 
             :returns: None
 
@@ -78,13 +86,17 @@ class SSHDriver(Driver):
             self.stream_out = None
             self.stream_err = None
 
-        def open(self, target, port, username, password, look_for_keys):
+        def open(self, target, port, username, password, look_for_keys, private_key):
+            key_param = {}
+            if private_key is not None:
+                key_param = {'pkey': private_key}
             self.client.connect(
                 target,
                 port=port,
                 username=username,
                 password=password,
-                look_for_keys=look_for_keys
+                look_for_keys=look_for_keys,
+                **key_param
             )
 
         def send_text(self, text):
@@ -202,14 +214,18 @@ class SSHDriver(Driver):
                 ret += self.stream_queue.get()
             return str(ret, 'utf8')
 
-        def open(self, target, port, username, password, look_for_keys):
+        def open(self, target, port, username, password, look_for_keys, private_key):
+            key_param = {}
+            if private_key is not None:
+                key_param = {'pkey': private_key}
             try:
                 self.client.connect(
                     target,
                     port=port,
                     username=username,
                     password=password,
-                    look_for_keys=look_for_keys
+                    look_for_keys=look_for_keys,
+                    **key_param
                 )
             except TimeoutError as ex:
                 raise DriverError('Timeout while connecting to {0}'.format(target)) from ex
@@ -284,17 +300,29 @@ class SSHDriver(Driver):
             self.client.close()
 
     def __init__(self, target, username='', password='', port=22, auto_add_keys=True, shell_mode=True,
-                 look_for_keys=False, chunk_size=1024):
+                 look_for_keys=False, chunk_size=1024, private_key_file=None, private_key_password=None):
         """Instantiates the connection, but does not open it
 
-        :param str target: Target host
-        :param str username: Username to use if authentication is available
-        :param str password: Password to use if authentication is available
-        :param int port: Port on which connection should be attempted
-        :param bool auto_add_keys: If true, automatically populate the known_hosts with discovered keys
-        :param bool shell_mode: If true, use a single channel for all commands
-        :param bool look_for_keys: Whether to look for keys in the known_hosts file
-        :param int chunk_size: How many bytes read from the device in a single cycle"""
+        :param target: Target host
+        :type target: str
+        :param username: Username to use if authentication is available
+        :type username: str
+        :param password: Password to use if authentication is available
+        :type password: str
+        :param port: Port on which connection should be attempted
+        :type port: int
+        :param auto_add_keys: If true, automatically populate the known_hosts with discovered keys
+        :type auto_add_keys: bool
+        :param shell_mode: If true, use a single channel for all commands
+        :type shell_mode: bool
+        :param look_for_keys: Whether to look for keys in the known_hosts file
+        :type look_for_keys: bool
+        :param chunk_size: How many bytes read from the device in a single cycle
+        :type chunk_size: int
+        :param private_key_file: Path to the file containing the RSA private key, if any
+        :type private_key_file: Union[str, None]
+        :param private_key_password: Password of the private key file, if it is encrypted
+        :type private_key_password: Union[str, None]"""
         self.target = target
         self.username = username
         self.password = password
@@ -304,6 +332,13 @@ class SSHDriver(Driver):
         self._client = client.SSHClient()
         if auto_add_keys:
             self._client.set_missing_host_key_policy(client.AutoAddPolicy())
+        if private_key_file is not None:
+            params = [private_key_file]
+            if private_key_password is not None:
+                params.append(private_key_password)
+            self.private_key = RSAKey.from_private_key_file(*params)
+        else:
+            self.private_key = None
         if shell_mode:
             sub_driver = self.ShellSubDriver
         else:
@@ -316,7 +351,8 @@ class SSHDriver(Driver):
                               port=self.port,
                               username=self.username,
                               password=self.password,
-                              look_for_keys=self.look_for_keys)
+                              look_for_keys=self.look_for_keys,
+                              private_key=self.private_key)
         except AuthenticationException as ex:
             raise DriverError("Authentication failed") from ex
         except client.SSHException as ex:
