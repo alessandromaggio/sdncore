@@ -93,6 +93,9 @@ __pycache__/
 # C extensions
 *.so
 
+# PyCache
+__pycache__
+
 # Distribution / packaging
 bin/
 build/

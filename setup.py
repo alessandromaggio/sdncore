@@ -2,7 +2,7 @@ from setuptools import setup
 
 
 setup(name='sdncore',
-      version='0.1.1.dev1',
+      version='0.1.2.dev',
       description='SDN Utils for Python',
       url='https://github.com/alessandromaggio/sdncore',
       author='Alessandro Maggio',
